@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { HousingData } from "@/data/housing";
-import { resolveHousingSelection } from "@/data/housing";
+import { housingByYear, years, resolveHousingSelection } from "@/data/housing";
 import { calculate } from "@/utils/calculator";
 import HousingTypeSelect from "@/components/HousingTypeSelect";
 import DepositStep from "@/components/DepositStep";
@@ -15,18 +15,21 @@ const DEFAULT_RATE = 3.2;
 
 interface Props {
   housing: HousingData;
+  initialYear: string;
   initialCategoryId: string;
   initialTypeId: string;
 }
 
 export default function Calculator({
-  housing,
+  housing: initialHousing,
+  initialYear,
   initialCategoryId,
   initialTypeId,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [year, setYear] = useState(initialYear);
   const [categoryId, setCategoryId] = useState(initialCategoryId);
   const [typeId, setTypeId] = useState(initialTypeId);
   const [additionalDeposit, setAdditionalDeposit] = useState(0);
@@ -34,6 +37,8 @@ export default function Calculator({
   const [annualRatePercent, setAnnualRatePercent] = useState<number | "">(
     DEFAULT_RATE
   );
+
+  const housing = housingByYear[year] ?? initialHousing;
 
   const { category, type } = resolveHousingSelection(
     housing,
@@ -44,11 +49,30 @@ export default function Calculator({
   // URL 쿼리와 현재 선택 상태를 동기화한다 (전체 페이지 리로드 없이).
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
+    params.set("year", year);
     params.set("category", category.id);
     params.set("type", type.id);
     router.replace(`?${params.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category.id, type.id]);
+  }, [year, category.id, type.id]);
+
+  const handleYearChange = (nextYear: string) => {
+    setYear(nextYear);
+    const nextHousing = housingByYear[nextYear] ?? housing;
+    // 새 연도에 현재 공급대상/주택형이 없으면 기본값으로 자동 선택
+    const nextCategory =
+      nextHousing.categories.find((c) => c.id === categoryId) ??
+      nextHousing.categories.find((c) => c.id === nextHousing.defaultCategoryId) ??
+      nextHousing.categories[0];
+    const stillValid = nextCategory.types.some((t) => t.id === typeId);
+    const nextTypeId = stillValid
+      ? typeId
+      : nextCategory.types.find((t) => t.id === nextHousing.defaultTypeId)?.id ??
+        nextCategory.types[0].id;
+    setCategoryId(nextCategory.id);
+    setTypeId(nextTypeId);
+    setAdditionalDeposit(0);
+  };
 
   const handleCategoryChange = (nextCategoryId: string) => {
     setCategoryId(nextCategoryId);
@@ -88,9 +112,13 @@ export default function Calculator({
         <p className="subtitle">
           {housing.housingName} · {category.name} {type.name}
         </p>
+        <p className="subtitle">{housing.noticeLabel}</p>
       </header>
 
       <HousingTypeSelect
+        years={years}
+        selectedYear={year}
+        onYearChange={handleYearChange}
         categories={housing.categories}
         selectedCategoryId={category.id}
         selectedTypeId={type.id}

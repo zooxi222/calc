@@ -3,6 +3,9 @@
 import type { HousingCategory } from "@/data/housing";
 
 interface Props {
+  years: string[];
+  selectedYear: string;
+  onYearChange: (year: string) => void;
   categories: HousingCategory[];
   selectedCategoryId: string;
   selectedTypeId: string;
@@ -11,6 +14,9 @@ interface Props {
 }
 
 export default function HousingTypeSelect({
+  years,
+  selectedYear,
+  onYearChange,
   categories,
   selectedCategoryId,
   selectedTypeId,
@@ -22,6 +28,24 @@ export default function HousingTypeSelect({
 
   return (
     <section className="card select-card">
+      <div className="select-group">
+        <label className="select-label" htmlFor="year-select">
+          공고 연도
+        </label>
+        <select
+          id="year-select"
+          className="select-input"
+          value={selectedYear}
+          onChange={(e) => onYearChange(e.target.value)}
+        >
+          {years.map((year) => (
+            <option key={year} value={year}>
+              {year}년
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="select-group">
         <label className="select-label" htmlFor="category-select">
           공급대상

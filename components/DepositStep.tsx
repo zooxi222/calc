@@ -18,19 +18,23 @@ export default function DepositStep({ type, additionalDeposit, onChange }: Props
   );
 
   const clamp = (value: number) =>
-    Math.min(Math.max(value, 0), deposit.maxAdditional);
+    Math.min(Math.max(value, -deposit.maxReduction), deposit.maxAdditional);
 
   const handleStep = (direction: 1 | -1) => {
     onChange(clamp(additionalDeposit + direction * deposit.step));
   };
 
+  const sign = additionalDeposit > 0 ? "+" : additionalDeposit < 0 ? "-" : "";
+
   return (
     <section className="card">
-      <h2 className="step-title">1. 보증금 얼마나 올릴까요?</h2>
+      <h2 className="step-title">1. 보증금 얼마나 올리거나 낮출까요?</h2>
 
       <div className="deposit-amount-row">
-        <span className="deposit-label">추가 보증금</span>
-        <span className="deposit-value">+ {formatWon(additionalDeposit)}</span>
+        <span className="deposit-label">추가/감액 보증금</span>
+        <span className="deposit-value">
+          {sign} {formatWon(Math.abs(additionalDeposit))}
+        </span>
       </div>
 
       <div className="stepper-row">
@@ -38,7 +42,7 @@ export default function DepositStep({ type, additionalDeposit, onChange }: Props
           type="button"
           className="stepper-btn"
           onClick={() => handleStep(-1)}
-          disabled={additionalDeposit <= 0}
+          disabled={additionalDeposit <= -deposit.maxReduction}
           aria-label="보증금 감소"
         >
           −
@@ -47,12 +51,12 @@ export default function DepositStep({ type, additionalDeposit, onChange }: Props
         <input
           type="range"
           className="slider"
-          min={0}
+          min={-deposit.maxReduction}
           max={deposit.maxAdditional}
           step={deposit.step}
           value={additionalDeposit}
           onChange={(e) => onChange(clamp(Number(e.target.value)))}
-          aria-label="추가 보증금 슬라이더"
+          aria-label="추가/감액 보증금 슬라이더"
         />
 
         <button
@@ -67,8 +71,8 @@ export default function DepositStep({ type, additionalDeposit, onChange }: Props
       </div>
 
       <div className="range-hint">
-        <span>0원</span>
-        <span>최대 {formatWon(deposit.maxAdditional)}</span>
+        <span>최저 -{formatWon(deposit.maxReduction)}</span>
+        <span>최대 +{formatWon(deposit.maxAdditional)}</span>
       </div>
 
       <div className="conversion-preview">

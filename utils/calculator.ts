@@ -44,7 +44,7 @@ export function calculateContractAmount(type: HousingType): number {
   return Math.round((deposit.base * contract.value) / 100);
 }
 
-/** 추가 보증금에 따른 전환 후 보증금/월세를 계산한다. */
+/** 추가(+) 또는 감액(-) 보증금에 따른 전환 후 보증금/월세를 계산한다. */
 export function calculateDepositConversion(
   type: HousingType,
   additionalDeposit: number
@@ -52,14 +52,16 @@ export function calculateDepositConversion(
   const { deposit, rent } = type;
 
   const clampedAdditional = Math.min(
-    Math.max(additionalDeposit, 0),
+    Math.max(additionalDeposit, -deposit.maxReduction),
     deposit.maxAdditional
   );
 
   const finalDeposit = deposit.base + clampedAdditional;
-  const steps = clampedAdditional / deposit.step;
-  const rentDecrease = steps * rent.decreasePerStep;
-  const finalRent = rent.base - rentDecrease;
+
+  const finalRent =
+    clampedAdditional >= 0
+      ? rent.base - (clampedAdditional / deposit.step) * rent.decreasePerStep
+      : rent.base + (-clampedAdditional / deposit.step) * rent.increasePerStep;
 
   return { finalDeposit, finalRent };
 }
