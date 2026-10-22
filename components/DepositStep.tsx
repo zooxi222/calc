@@ -28,7 +28,17 @@ export default function DepositStep({ type, additionalDeposit, onChange }: Props
 
   return (
     <section className="card">
-      <h2 className="step-title">1. 보증금 얼마나 올리거나 낮출까요?</h2>
+      <div className="step-title-row">
+        <h2 className="step-title">1. 보증금 얼마나 올리거나 낮출까요?</h2>
+        <button
+          type="button"
+          className="reset-btn"
+          onClick={() => onChange(0)}
+          disabled={additionalDeposit === 0}
+        >
+          초기화
+        </button>
+      </div>
 
       <div className="deposit-amount-row">
         <span className="deposit-label">추가/감액 보증금</span>
